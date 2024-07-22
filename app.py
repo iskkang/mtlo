@@ -5,6 +5,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import logging
 
+# 페이지 설정
+st.set_page_config(layout="wide")
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -100,7 +103,7 @@ def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
     logging.debug(f"Global trade API response: {response.status_code}")
-    if response.status_code == 200:
+    if response.status_code == 200):
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
@@ -112,68 +115,4 @@ def fetch_and_plot_global_trade():
             return fig
         else:
             logging.error("Global trade API response does not contain 'plots' key or it is empty")
-            return None
-    else:
-        logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
-        return None
-
-# Streamlit 앱 구성
-st.set_page_config(layout="wide")
-st.title("MTL Dashboard")
-
-# 첫 번째 행: 3개의 그래프 (SCFI, 포트 비교, 글로벌 무역)
-st.header("Timeline Graphs")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    fig_scfi = fetch_and_plot_scfi()
-    if fig_scfi:
-        st.plotly_chart(fig_scfi, use_container_width=True)
-    else:
-        st.write("SCFI 데이터를 가져오는 데 실패했습니다.")
-
-with col2:
-    fig_ports = fetch_and_plot_ports()
-    if fig_ports:
-        st.plotly_chart(fig_ports, use_container_width=True)
-    else:
-        st.write("포트 비교 데이터를 가져오는 데 실패했습니다.")
-
-with col3:
-    fig_global_trade = fetch_and_plot_global_trade()
-    if fig_global_trade:
-        st.plotly_chart(fig_global_trade, use_container_width=True)
-    else:
-        st.write("글로벌 무역 데이터를 가져오는 데 실패했습니다.")
-
-# 두 번째 행: 뉴스 기사와 포트 현황
-st.header("Latest News and Port Status")
-
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.subheader("뉴스")
-    categories = ["해상운임", "항공운임", "철도", "물류", "Shipping"]
-    for category in categories:
-        if st.button(category):
-            keyword = category
-            news = fetch_news(keyword)
-            st.write(f"키워드 '{keyword}'에 대한 뉴스 기사")
-            for article in news[:3]:  # 상위 3개 기사만 표시
-                st.markdown(f"""
-                <div class="card">
-                    <img src="{article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image'}" alt="{article['title']}" style="width:100%">
-                    <h4><b>{article['title']}</b></h4>
-                    <p>출처: {article['source']}</p>
-                    <p>날짜: {article['date']}</p>
-                    <a href="{article['link']}" target="_blank">기사 읽기</a>
-                </div>
-                """, unsafe_allow_html=True)
-
-with col2:
-    st.subheader("포트 현황")
-    fig_ports_status = fetch_and_plot_ports()
-    if fig_ports_status:
-        st.plotly_chart(fig_ports_status, use_container_width=True)
-    else:
-        st.write("포트 현황 데이터를 가져오는 데 실패했습니다.")
+            return
