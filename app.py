@@ -69,22 +69,31 @@ def search_rate(df, origin, destination):
 def fetch_and_plot_ports():
     url = "https://www.econdb.com/widgets/top-port-comparison/data/"
     response = requests.get(url)
+    logging.debug(f"Port comparison API response: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
             df = pd.DataFrame(series_data)
-            fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
-            return fig
+            logging.debug(f"Port comparison data: {df.head()}")
+            if 'name' in df.columns and 'value' in df.columns:
+                fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
+                return fig
+            else:
+                logging.error("Expected columns 'name' and 'value' not found in the data")
+                return None
         else:
+            logging.error("Port comparison API response does not contain 'plots' key or it is empty")
             return None
     else:
+        logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 # SCFI function
 def fetch_and_plot_scfi():
     url = "https://www.econdb.com/widgets/shanghai-containerized-index/data/"
     response = requests.get(url)
+    logging.debug(f"SCFI API response: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
@@ -98,15 +107,18 @@ def fetch_and_plot_scfi():
             fig.update_layout(title="Shanghai Containerized Freight Index (SCFI)", xaxis_title='Date', yaxis_title='SCFI Value')
             return fig
         else:
+            logging.error("SCFI API response does not contain 'plots' key or it is empty")
             return None
     else:
+        logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 # Global Trade function
 def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
-    if response.status_code == 200:
+    logging.debug(f"Global trade API response: {response.status_code}")
+    if response.status_code == 200):
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
@@ -117,8 +129,10 @@ def fetch_and_plot_global_trade():
             fig.update_layout(xaxis=dict(tickmode='linear', tick0=0, dtick=52))
             return fig
         else:
+            logging.error("Global trade API response does not contain 'plots' key or it is empty")
             return None
     else:
+        logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 # Streamlit app
