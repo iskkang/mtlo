@@ -9,6 +9,44 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
+# CSS 스타일 추가
+def add_custom_css():
+    st.markdown(
+        """
+        <style>
+        .main {
+            background-color: #f0f2f6;
+        }
+        .stButton > button {
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 12px;
+            padding: 10px 24px;
+            margin: 5px 2px;
+            cursor: pointer;
+            transition-duration: 0.4s;
+        }
+        .stButton > button:hover {
+            background-color: white; 
+            color: black; 
+            border: 2px solid #4CAF50;
+        }
+        .stTextInput > div > input {
+            border-radius: 12px;
+            padding: 10px;
+            border: 2px solid #ccc;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
 # 뉴스 기능
 def fetch_news(keyword):
     url = f"https://news.google.com/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko"
@@ -76,22 +114,17 @@ def fetch_and_plot_ports():
             series_data = data['plots'][0]['data']
             df = pd.DataFrame(series_data)
             logging.debug(f"Port comparison data: {df.head()}")
-            st.write("Port comparison data:")
-            st.write(df.head())
             if 'name' in df.columns and 'value' in df.columns:
                 fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
                 return fig
             else:
                 logging.error("Expected columns 'name' and 'value' not found in the data")
-                st.write("Expected columns 'name' and 'value' not found in the data")
                 return None
         else:
             logging.error("Port comparison API response does not contain 'plots' key or it is empty")
-            st.write("Port comparison API response does not contain 'plots' key or it is empty")
             return None
     else:
         logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
-        st.write(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 # SCFI 기능
@@ -113,11 +146,9 @@ def fetch_and_plot_scfi():
             return fig
         else:
             logging.error("SCFI API response does not contain 'plots' key or it is empty")
-            st.write("SCFI API response does not contain 'plots' key or it is empty")
             return None
     else:
         logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
-        st.write(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 # 글로벌 무역 기능
@@ -125,7 +156,7 @@ def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
     logging.debug(f"Global trade API response: {response.status_code}")
-    if response.status_code == 200:
+    if response.status_code == 200):
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
@@ -137,15 +168,16 @@ def fetch_and_plot_global_trade():
             return fig
         else:
             logging.error("Global trade API response does not contain 'plots' key or it is empty")
-            st.write("Global trade API response does not contain 'plots' key or it is empty")
             return None
     else:
         logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
-        st.write(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 # Streamlit 앱 구성
 st.title("MTL Dashboard")
+
+# 커스텀 CSS 추가
+add_custom_css()
 
 # 뉴스 섹션
 st.header("뉴스")
@@ -153,11 +185,15 @@ keyword = "해상운임"
 news = fetch_news(keyword)
 st.write(f"키워드 '{keyword}'에 대한 뉴스 기사")
 for article in news[:3]:  # 상위 3개 기사만 표시
-    st.image(article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image')
-    st.subheader(article['title'])
-    st.write(f"출처: {article['source']}")
-    st.write(f"날짜: {article['date']}")
-    st.markdown(f"[기사 읽기]({article['link']})")
+    st.markdown(f"""
+    <div class="card">
+        <img src="{article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image'}" alt="{article['title']}" style="width:100%">
+        <h4><b>{article['title']}</b></h4>
+        <p>출처: {article['source']}</p>
+        <p>날짜: {article['date']}</p>
+        <a href="{article['link']}" target="_blank">기사 읽기</a>
+    </div>
+    """, unsafe_allow_html=True)
 
 # 운임 비용 섹션
 st.header("해상운임 검색")
