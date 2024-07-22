@@ -156,7 +156,7 @@ def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
     logging.debug(f"Global trade API response: {response.status_code}")
-    if response.status_code == 200):
+    if response.status_code == 200:
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
