@@ -50,13 +50,23 @@ def fetch_and_plot_ports():
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
             df = pd.DataFrame(series_data)
-            fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
-            return fig
+            logging.debug(f"Port comparison data: {df.head()}")
+            st.write("Port comparison data:")
+            st.write(df.head())
+            if 'name' in df.columns and 'value' in df.columns:
+                fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
+                return fig
+            else:
+                logging.error("Expected columns 'name' and 'value' not found in the data")
+                st.write("Expected columns 'name' and 'value' not found in the data")
+                return None
         else:
             logging.error("Port comparison API response does not contain 'plots' key or it is empty")
+            st.write("Port comparison API response does not contain 'plots' key or it is empty")
             return None
     else:
         logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
+        st.write(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
 def fetch_and_plot_scfi():
