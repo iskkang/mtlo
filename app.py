@@ -11,9 +11,112 @@ st.set_page_config(layout="wide")
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-# CSS 파일 읽어오기
-with open('style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+# CSS 스타일링 추가
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+    /* DASHBOARD PADDING */
+    div.block-container.css-z5fcl4.egzxvld4 {
+        width: 100%;
+        min-width: auto;
+        max-width: initial;
+        padding-left: 5rem;
+        padding-right: 5rem;
+        padding-top: 15px;
+        padding-bottom: 40px;
+    }
+
+    /* GLOBAL FONT CHANGE */
+    html, body, [class*="css"] {
+        font-family: 'Space Grotesk'; 
+    }
+
+    .st-ae {
+        font-family: 'Space Grotesk';
+    }
+
+    /* CONTAINER CSS */
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+        border: 1px groove #52546a;
+        border-radius: 10px;
+        padding-left: 25px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        box-shadow: -6px 8px 20px 1px #00000052;
+    }
+
+    /* CUSTOM MARKDOWN CLASSES */
+    .dashboard_title {
+        font-size: 35px; 
+        font-family: 'Space Grotesk';
+        font-weight: 700;
+        line-height: 1.2;
+        text-align: left;
+        padding-bottom: 35px;
+    }
+
+    .price_details {
+        font-size: 30px; 
+        font-family: 'Space Grotesk';
+        color: #f6f6f6;
+        font-weight: 900;
+        text-align: left;
+        line-height: 1;
+        padding-bottom: 10px;
+    }
+
+    .btc_text {
+        font-size: 14px; 
+        font-family: 'Space Grotesk';
+        color: #f7931a;
+        font-weight: bold;
+        text-align: left;
+        line-height: 0.2;
+        padding-top: 10px;
+    }
+
+    .eth_text {
+        font-size: 14px; 
+        font-family: 'Space Grotesk';
+        color: #a1a1a1;
+        font-weight: bold;
+        text-align: left;
+        line-height: 0.2;
+        padding-top: 10px;
+    }
+
+    .xmr_text {
+        font-size: 14px; 
+        font-family: 'Space Grotesk';
+        color: #ff6b08;
+        font-weight: bold;
+        text-align: left;
+        line-height: 0.2;
+        padding-top: 10px;
+    }
+
+    .sol_text {
+        font-size: 14px; 
+        font-family: 'Space Grotesk';
+        color: #807af4;
+        font-weight: bold;
+        text-align: left;
+        line-height: 0.2;
+        padding-top: 10px;
+    }
+
+    .xrp_text {
+        font-size: 14px; 
+        font-family: 'Space Grotesk';
+        color: #01acf1;
+        font-weight: bold;
+        text-align: left;
+        line-height: 0.2;
+        padding-top: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # 뉴스 기능
 def fetch_news(keyword):
@@ -103,7 +206,7 @@ def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
     logging.debug(f"Global trade API response: {response.status_code}")
-    if response.status_code == 200:
+    if response.status_code == 200):
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
