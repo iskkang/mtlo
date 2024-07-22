@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -8,44 +7,6 @@ import logging
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
-
-# CSS 스타일 추가
-def add_custom_css():
-    st.markdown(
-        """
-        <style>
-        .main {
-            background-color: #f0f2f6;
-        }
-        .stButton > button {
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 12px;
-            padding: 10px 24px;
-            margin: 5px 2px;
-            cursor: pointer;
-            transition-duration: 0.4s;
-        }
-        .stButton > button:hover {
-            background-color: white; 
-            color: black; 
-            border: 2px solid #4CAF50;
-        }
-        .stTextInput > div > input {
-            border-radius: 12px;
-            padding: 10px;
-            border: 2px solid #ccc;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            margin: 10px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-        }
-        </style>
-        """, unsafe_allow_html=True
-    )
 
 # 뉴스 기능
 def fetch_news(keyword):
@@ -79,31 +40,7 @@ def fetch_news(keyword):
 
     return news
 
-# 운임 비용 기능
-def fetch_data(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36',
-    }
-    response = requests.get(url, headers=headers)
-    data = response.json()
-    if isinstance(data, list):
-        df = pd.DataFrame(data)
-    else:
-        raise ValueError("Expected a list of data")
-    return df
-
-def search_rate(df, origin, destination):
-    origin = origin.lower()
-    destination = destination.lower()
-    df['name_o'] = df['name_o'].str.lower()
-    df['name_d'] = df['name_d'].str.lower()
-    filtered_df = df[df['name_o'].str.contains(origin) & df['name_d'].str.contains(destination)]
-    if not filtered_df.empty:
-        return filtered_df[['name_o', 'name_d', 'dv20rate']]
-    else:
-        return "No data found for the given origin and destination."
-
-# 포트 비교 기능
+# 데이터 불러오기 및 전처리 함수들
 def fetch_and_plot_ports():
     url = "https://www.econdb.com/widgets/top-port-comparison/data/"
     response = requests.get(url)
@@ -113,13 +50,8 @@ def fetch_and_plot_ports():
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
             df = pd.DataFrame(series_data)
-            logging.debug(f"Port comparison data: {df.head()}")
-            if 'name' in df.columns and 'value' in df.columns:
-                fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
-                return fig
-            else:
-                logging.error("Expected columns 'name' and 'value' not found in the data")
-                return None
+            fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
+            return fig
         else:
             logging.error("Port comparison API response does not contain 'plots' key or it is empty")
             return None
@@ -127,7 +59,6 @@ def fetch_and_plot_ports():
         logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
-# SCFI 기능
 def fetch_and_plot_scfi():
     url = "https://www.econdb.com/widgets/shanghai-containerized-index/data/"
     response = requests.get(url)
@@ -151,12 +82,11 @@ def fetch_and_plot_scfi():
         logging.error(f"Failed to retrieve data from {url}: {response.status_code}, {response.text}")
         return None
 
-# 글로벌 무역 기능
 def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
     logging.debug(f"Global trade API response: {response.status_code}")
-    if response.status_code == 200:
+    if response.status_code == 200):
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
@@ -174,67 +104,99 @@ def fetch_and_plot_global_trade():
         return None
 
 # Streamlit 앱 구성
+st.set_page_config(layout="wide")
 st.title("MTL Dashboard")
 
 # 커스텀 CSS 추가
-add_custom_css()
+st.markdown(
+    """
+    <style>
+    .main {
+        background-color: #f0f2f6;
+    }
+    .stButton > button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 12px;
+        padding: 10px 24px;
+        margin: 5px 2px;
+        cursor: pointer;
+        transition-duration: 0.4s;
+    }
+    .stButton > button:hover {
+        background-color: white; 
+        color: black; 
+        border: 2px solid #4CAF50;
+    }
+    .stTextInput > div > input {
+        border-radius: 12px;
+        padding: 10px;
+        border: 2px solid #ccc;
+    }
+    .card {
+        background: white;
+        padding: 20px;
+        margin: 10px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
 
-# 뉴스 섹션
-st.header("뉴스")
-keyword = "해상운임"
-news = fetch_news(keyword)
-st.write(f"키워드 '{keyword}'에 대한 뉴스 기사")
-for article in news[:3]:  # 상위 3개 기사만 표시
-    st.markdown(f"""
-    <div class="card">
-        <img src="{article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image'}" alt="{article['title']}" style="width:100%">
-        <h4><b>{article['title']}</b></h4>
-        <p>출처: {article['source']}</p>
-        <p>날짜: {article['date']}</p>
-        <a href="{article['link']}" target="_blank">기사 읽기</a>
-    </div>
-    """, unsafe_allow_html=True)
+# 첫 번째 행: 3개의 그래프 (SCFI, 포트 비교, 글로벌 무역)
+st.header("Timeline Graphs")
+col1, col2, col3 = st.columns(3)
 
-# 운임 비용 섹션
-st.header("해상운임 검색")
-col1, col2 = st.columns(2)
 with col1:
-    origin = st.text_input("출발지 입력", "busan")
-with col2:
-    destination = st.text_input("목적지 입력", "ningbo")
-
-if st.button("검색"):
-    url = "https://www.econdb.com/maritime/freight_rates/"
-    df = fetch_data(url)
-    result = search_rate(df, origin, destination)
-    if isinstance(result, pd.DataFrame):
-        st.write(result)
+    fig_scfi = fetch_and_plot_scfi()
+    if fig_scfi:
+        st.plotly_chart(fig_scfi, use_container_width=True)
     else:
-        st.write(result)
+        st.write("SCFI 데이터를 가져오는 데 실패했습니다.")
 
-# 그래프 섹션
-st.subheader("그래프")
+with col2:
+    fig_ports = fetch_and_plot_ports()
+    if fig_ports:
+        st.plotly_chart(fig_ports, use_container_width=True)
+    else:
+        st.write("포트 비교 데이터를 가져오는 데 실패했습니다.")
 
-# 포트 비교 그래프
-st.subheader("포트 비교")
-fig = fetch_and_plot_ports()
-if fig:
-    st.plotly_chart(fig)
-else:
-    st.write("포트 비교 데이터를 가져오는 데 실패했습니다.")
+with col3:
+    fig_global_trade = fetch_and_plot_global_trade()
+    if fig_global_trade:
+        st.plotly_chart(fig_global_trade, use_container_width=True)
+    else:
+        st.write("글로벌 무역 데이터를 가져오는 데 실패했습니다.")
 
-# SCFI 그래프
-st.subheader("SCFI")
-fig = fetch_and_plot_scfi()
-if fig:
-    st.plotly_chart(fig)
-else:
-    st.write("SCFI 데이터를 가져오는 데 실패했습니다.")
+# 두 번째 행: 뉴스 기사와 포트 현황
+st.header("Latest News and Port Status")
 
-# 글로벌 무역 그래프
-st.subheader("글로벌 무역")
-fig = fetch_and_plot_global_trade()
-if fig:
-    st.plotly_chart(fig)
-else:
-    st.write("글로벌 무역 데이터를 가져오는 데 실패했습니다.")
+col1, col2 = st.columns([1, 2])
+
+with col1:
+    st.subheader("뉴스")
+    categories = ["해상운임", "항공운임", "철도", "물류", "Shipping"]
+    for category in categories:
+        if st.button(category):
+            keyword = category
+            news = fetch_news(keyword)
+            st.write(f"키워드 '{keyword}'에 대한 뉴스 기사")
+            for article in news[:3]:  # 상위 3개 기사만 표시
+                st.markdown(f"""
+                <div class="card">
+                    <img src="{article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image'}" alt="{article['title']}" style="width:100%">
+                    <h4><b>{article['title']}</b></h4>
+                    <p>출처: {article['source']}</p>
+                    <p>날짜: {article['date']}</p>
+                    <a href="{article['link']}" target="_blank">기사 읽기</a>
+                </div>
+                """, unsafe_allow_html=True)
+
+with col2:
+    st.subheader("포트 현황")
+    fig_ports_status = fetch_and_plot_ports()
+    if fig_ports_status:
+        st.plotly_chart(fig_ports_status, use_container_width=True)
+    else:
+        st.write("포트 현황 데이터를 가져오는 데 실패했습니다.")
