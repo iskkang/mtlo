@@ -8,6 +8,10 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
+# CSS 파일 읽어오기
+with open('style.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
 # 뉴스 기능
 def fetch_news(keyword):
     url = f"https://news.google.com/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko"
@@ -116,43 +120,6 @@ def fetch_and_plot_global_trade():
 # Streamlit 앱 구성
 st.set_page_config(layout="wide")
 st.title("MTL Dashboard")
-
-# 커스텀 CSS 추가
-st.markdown(
-    """
-    <style>
-    .main {
-        background-color: #f0f2f6;
-    }
-    .stButton > button {
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 12px;
-        padding: 10px 24px;
-        margin: 5px 2px;
-        cursor: pointer;
-        transition-duration: 0.4s;
-    }
-    .stButton > button:hover {
-        background-color: white; 
-        color: black; 
-        border: 2px solid #4CAF50;
-    }
-    .stTextInput > div > input {
-        border-radius: 12px;
-        padding: 10px;
-        border: 2px solid #ccc;
-    }
-    .card {
-        background: white;
-        padding: 20px;
-        margin: 10px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
 
 # 첫 번째 행: 3개의 그래프 (SCFI, 포트 비교, 글로벌 무역)
 st.header("Timeline Graphs")
