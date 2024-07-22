@@ -1,12 +1,13 @@
 import streamlit as st
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import requests
-from bs4 import BeautifulSoup
+import logging
 
-# Streamlit 페이지 설정
-st.set_page_config(layout="wide", page_title="Basic Dashboard")
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 
 # 뉴스 기능
 def fetch_news(keyword):
@@ -44,26 +45,50 @@ def fetch_news(keyword):
 def fetch_freight_data():
     url = "https://www.econdb.com/maritime/freight_rates/"
     response = requests.get(url)
-    data = response.json()
-    return pd.DataFrame(data)
+    try:
+        data = response.json()
+        return pd.DataFrame(data)
+    except requests.exceptions.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON: {e}")
+        logging.error(f"Response content: {response.content}")
+        st.error("Error fetching freight data. Please check the logs for details.")
+        return pd.DataFrame()
 
 def fetch_port_comparison():
     url = "https://www.econdb.com/widgets/top-port-comparison/data/"
     response = requests.get(url)
-    data = response.json()
-    return pd.DataFrame(data['plots'][0]['data'])
+    try:
+        data = response.json()
+        return pd.DataFrame(data['plots'][0]['data'])
+    except requests.exceptions.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON: {e}")
+        logging.error(f"Response content: {response.content}")
+        st.error("Error fetching port comparison data. Please check the logs for details.")
+        return pd.DataFrame()
 
 def fetch_scfi_data():
     url = "https://www.econdb.com/widgets/shanghai-containerized-index/data/"
     response = requests.get(url)
-    data = response.json()
-    return pd.DataFrame(data['plots'][0]['data'])
+    try:
+        data = response.json()
+        return pd.DataFrame(data['plots'][0]['data'])
+    except requests.exceptions.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON: {e}")
+        logging.error(f"Response content: {response.content}")
+        st.error("Error fetching SCFI data. Please check the logs for details.")
+        return pd.DataFrame()
 
 def fetch_global_trade_data():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
-    data = response.json()
-    return pd.DataFrame(data['plots'][0]['data'])
+    try:
+        data = response.json()
+        return pd.DataFrame(data['plots'][0]['data'])
+    except requests.exceptions.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON: {e}")
+        logging.error(f"Response content: {response.content}")
+        st.error("Error fetching global trade data. Please check the logs for details.")
+        return pd.DataFrame()
 
 # 데이터 불러오기
 freight_data = fetch_freight_data()
@@ -99,24 +124,28 @@ st.header("Graphs")
 graph1, graph2 = st.columns(2)
 
 # Net Working Capital vs Gross Working Capital 그래프
-fig1 = px.line(freight_data, x="date", y="value", title="Net Working Capital vs Gross Working Capital")
-graph1.plotly_chart(fig1, use_container_width=True)
+if not freight_data.empty:
+    fig1 = px.line(freight_data, x="date", y="value", title="Net Working Capital vs Gross Working Capital")
+    graph1.plotly_chart(fig1, use_container_width=True)
 
 # Port Comparison 그래프
-fig2 = px.bar(port_comparison_data, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)")
-graph2.plotly_chart(fig2, use_container_width=True)
+if not port_comparison_data.empty:
+    fig2 = px.bar(port_comparison_data, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)")
+    graph2.plotly_chart(fig2, use_container_width=True)
 
 # 세 번째 행: SCFI 그래프
-fig3 = go.Figure()
-for column in scfi_data.columns:
-    if column != 'Date':
-        fig3.add_trace(go.Scatter(x=scfi_data['Date'], y=scfi_data[column], mode='lines+markers', name=column))
-fig3.update_layout(title="Shanghai Containerized Freight Index (SCFI)", xaxis_title='Date', yaxis_title='SCFI Value')
-st.plotly_chart(fig3, use_container_width=True)
+if not scfi_data.empty:
+    fig3 = go.Figure()
+    for column in scfi_data.columns:
+        if column != 'Date':
+            fig3.add_trace(go.Scatter(x=scfi_data['Date'], y=scfi_data[column], mode='lines+markers', name=column))
+    fig3.update_layout(title="Shanghai Containerized Freight Index (SCFI)", xaxis_title='Date', yaxis_title='SCFI Value')
+    st.plotly_chart(fig3, use_container_width=True)
 
 # 네 번째 행: 글로벌 무역 그래프
-fig4 = px.bar(global_trade_data, x=global_trade_data.index, y=global_trade_data.columns, title="Global exports (TEU by week)", barmode='stack')
-st.plotly_chart(fig4, use_container_width=True)
+if not global_trade_data.empty:
+    fig4 = px.bar(global_trade_data, x=global_trade_data.index, y=global_trade_data.columns, title="Global exports (TEU by week)", barmode='stack')
+    st.plotly_chart(fig4, use_container_width=True)
 
 # 뉴스 섹션
 st.header("뉴스")
