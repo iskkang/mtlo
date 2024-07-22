@@ -1,11 +1,12 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import requests
+from bs4 import BeautifulSoup
 
-st.set_page_config(layout="wide")
+# Streamlit 페이지 설정
+st.set_page_config(layout="wide", page_title="Basic Dashboard")
 
 # 뉴스 기능
 def fetch_news(keyword):
@@ -39,144 +40,92 @@ def fetch_news(keyword):
 
     return news
 
-# 운임 비용 기능
-def fetch_data(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36',
-    }
-    response = requests.get(url, headers=headers)
+# 데이터를 불러와서 처리하는 함수들
+def fetch_freight_data():
+    url = "https://www.econdb.com/maritime/freight_rates/"
+    response = requests.get(url)
     data = response.json()
-    if isinstance(data, list):
-        df = pd.DataFrame(data)
-    else:
-        raise ValueError("Expected a list of data")
-    return df
+    return pd.DataFrame(data)
 
-def search_rate(df, origin, destination):
-    origin = origin.lower()
-    destination = destination.lower()
-    df['name_o'] = df['name_o'].str.lower()
-    df['name_d'] = df['name_d'].str.lower()
-    filtered_df = df[df['name_o'].str.contains(origin) & df['name_d'].str.contains(destination)]
-    if not filtered_df.empty:
-        return filtered_df[['name_o', 'name_d', 'dv20rate']]
-    else:
-        return "No data found for the given origin and destination."
-
-# 포트 비교 기능
-def fetch_and_plot_ports():
+def fetch_port_comparison():
     url = "https://www.econdb.com/widgets/top-port-comparison/data/"
     response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if 'plots' in data and len(data['plots']) > 0:
-            series_data = data['plots'][0]['data']
-            df = pd.DataFrame(series_data)
-            fig = px.bar(df, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)", labels={'value': 'Thousand TEU', 'name': 'Port'})
-            return fig
-        else:
-            return None
-    else:
-        return None
+    data = response.json()
+    return pd.DataFrame(data['plots'][0]['data'])
 
-# SCFI 기능
-def fetch_and_plot_scfi():
+def fetch_scfi_data():
     url = "https://www.econdb.com/widgets/shanghai-containerized-index/data/"
     response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if 'plots' in data and len(data['plots']) > 0:
-            series_data = data['plots'][0]['data']
-            df = pd.DataFrame(series_data)
-            df['Date'] = pd.to_datetime(df['Date'])
-            fig = go.Figure()
-            for column in df.columns:
-                if column != 'Date':
-                    fig.add_trace(go.Scatter(x=df['Date'], y=df[column], mode='lines+markers', name=column))
-            fig.update_layout(title="Shanghai Containerized Freight Index (SCFI)", xaxis_title='Date', yaxis_title='SCFI Value')
-            return fig
-        else:
-            return None
-    else:
-        return None
+    data = response.json()
+    return pd.DataFrame(data['plots'][0]['data'])
 
-# 글로벌 무역 기능
-def fetch_and_plot_global_trade():
+def fetch_global_trade_data():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if 'plots' in data and len(data['plots']) > 0:
-            series_data = data['plots'][0]['data']
-            df = pd.DataFrame(series_data)
-            df['Date'] = pd.to_datetime(df['Date'])
-            df.set_index('Date', inplace=True)
-            fig = px.bar(df, x=df.index, y=df.columns, title="Global exports (TEU by week)", labels={'x': 'Year', 'value': 'TEU'}, barmode='stack')
-            fig.update_layout(xaxis=dict(tickmode='linear', tick0=0, dtick=52))
-            return fig
-        else:
-            return None
-    else:
-        return None
+    data = response.json()
+    return pd.DataFrame(data['plots'][0]['data'])
 
-# Streamlit 앱 구성
-st.title("엠티엘 뉴스")
+# 데이터 불러오기
+freight_data = fetch_freight_data()
+port_comparison_data = fetch_port_comparison()
+scfi_data = fetch_scfi_data()
+global_trade_data = fetch_global_trade_data()
+
+# Streamlit 레이아웃 구성
+st.title("Basic Dashboard using Streamlit and Plotly")
+
+# 첫 번째 행: 지표 카드
+st.header("KPIs")
+kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+
+with kpi1:
+    st.metric(label="Total Accounts Receivable", value="$6,621,280")
+    st.metric(label="Current Ratio", value="1.86%", delta="1.5%")
+
+with kpi2:
+    st.metric(label="Total Accounts Payable", value="$1,630,270")
+    st.metric(label="DSI", value="10 Days", delta="2 Days")
+
+with kpi3:
+    st.metric(label="Equity Ratio", value="75.38%")
+    st.metric(label="DSO", value="7 Days", delta="3 Days")
+
+with kpi4:
+    st.metric(label="Debt Equity", value="1.10%")
+    st.metric(label="DPO", value="28 Days", delta="5 Days")
+
+# 두 번째 행: 그래프
+st.header("Graphs")
+graph1, graph2 = st.columns(2)
+
+# Net Working Capital vs Gross Working Capital 그래프
+fig1 = px.line(freight_data, x="date", y="value", title="Net Working Capital vs Gross Working Capital")
+graph1.plotly_chart(fig1, use_container_width=True)
+
+# Port Comparison 그래프
+fig2 = px.bar(port_comparison_data, x='name', y='value', title="Top Port Comparison (June 24 vs June 23)")
+graph2.plotly_chart(fig2, use_container_width=True)
+
+# 세 번째 행: SCFI 그래프
+fig3 = go.Figure()
+for column in scfi_data.columns:
+    if column != 'Date':
+        fig3.add_trace(go.Scatter(x=scfi_data['Date'], y=scfi_data[column], mode='lines+markers', name=column))
+fig3.update_layout(title="Shanghai Containerized Freight Index (SCFI)", xaxis_title='Date', yaxis_title='SCFI Value')
+st.plotly_chart(fig3, use_container_width=True)
+
+# 네 번째 행: 글로벌 무역 그래프
+fig4 = px.bar(global_trade_data, x=global_trade_data.index, y=global_trade_data.columns, title="Global exports (TEU by week)", barmode='stack')
+st.plotly_chart(fig4, use_container_width=True)
 
 # 뉴스 섹션
 st.header("뉴스")
-keyword = st.text_input("뉴스 검색 키워드 입력", "해상운임")
-if st.button("뉴스 검색"):
-    news = fetch_news(keyword)
-    st.write(f"키워드 '{keyword}'에 대한 뉴스 기사")
-    for article in news[:3]:  # 상위 3개 기사만 표시
-        st.image(article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image')
-        st.subheader(article['title'])
-        st.write(f"출처: {article['source']}")
-        st.write(f"날짜: {article['date']}")
-        st.markdown(f"[기사 읽기]({article['link']})")
-
-# 운임 비용 섹션
-st.header("운임 비용")
-col1, col2 = st.columns(2)
-with col1:
-    origin = st.text_input("출발지 입력")
-with col2:
-    destination = st.text_input("목적지 입력")
-if st.button("운임 비용 검색"):
-    url = "https://www.econdb.com/maritime/freight_rates/"
-    df = fetch_data(url)
-    result = search_rate(df, origin, destination)
-    if isinstance(result, pd.DataFrame):
-        st.write(result)
-    else:
-        st.write(result)
-
-# 그래프 섹션
-st.header("그래프")
-
-# 포트 비교 그래프
-st.subheader("포트 비교")
-if st.button("포트 비교 데이터 가져오기"):
-    fig = fetch_and_plot_ports()
-    if fig:
-        st.plotly_chart(fig)
-    else:
-        st.write("포트 비교 데이터를 가져오는 데 실패했습니다.")
-
-# SCFI 그래프
-st.subheader("SCFI")
-if st.button("SCFI 데이터 가져오기"):
-    fig = fetch_and_plot_scfi()
-    if fig:
-        st.plotly_chart(fig)
-    else:
-        st.write("SCFI 데이터를 가져오는 데 실패했습니다.")
-
-# 글로벌 무역 그래프
-st.subheader("글로벌 무역")
-if st.button("글로벌 무역 데이터 가져오기"):
-    fig = fetch_and_plot_global_trade()
-    if fig:
-        st.plotly_chart(fig)
-    else:
-        st.write("글로벌 무역 데이터를 가져오는 데 실패했습니다.")
+keyword = "해상운임"
+news = fetch_news(keyword)
+st.write(f"키워드 '{keyword}'에 대한 뉴스 기사")
+for article in news[:3]:  # 상위 3개 기사만 표시
+    st.image(article['thumbnail'] if article['thumbnail'] else 'https://via.placeholder.com/300x150?text=No+Image')
+    st.subheader(article['title'])
+    st.write(f"출처: {article['source']}")
+    st.write(f"날짜: {article['date']}")
+    st.markdown(f"[기사 읽기]({article['link']})")
