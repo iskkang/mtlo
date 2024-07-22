@@ -125,7 +125,7 @@ def fetch_and_plot_global_trade():
     url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0"
     response = requests.get(url)
     logging.debug(f"Global trade API response: {response.status_code}")
-    if response.status_code == 200:
+    if response.status_code == 200):
         data = response.json()
         if 'plots' in data and len(data['plots']) > 0:
             series_data = data['plots'][0]['data']
@@ -145,7 +145,7 @@ def fetch_and_plot_global_trade():
         return None
 
 # Streamlit 앱 구성
-st.title("엠티엘 뉴스")
+st.title("MTL Dashboard")
 
 # 뉴스 섹션
 st.header("뉴스")
@@ -160,25 +160,24 @@ for article in news[:3]:  # 상위 3개 기사만 표시
     st.markdown(f"[기사 읽기]({article['link']})")
 
 # 운임 비용 섹션
-st.header("운임 비용")
+st.header("해상운임 검색")
 col1, col2 = st.columns(2)
 with col1:
-    origin = "seoul"
-    st.write(f"출발지: {origin}")
+    origin = st.text_input("출발지 입력", "busan")
 with col2:
-    destination = "busan"
-    st.write(f"목적지: {destination}")
+    destination = st.text_input("목적지 입력", "ningbo")
 
-url = "https://www.econdb.com/maritime/freight_rates/"
-df = fetch_data(url)
-result = search_rate(df, origin, destination)
-if isinstance(result, pd.DataFrame):
-    st.write(result)
-else:
-    st.write(result)
+if st.button("검색"):
+    url = "https://www.econdb.com/maritime/freight_rates/"
+    df = fetch_data(url)
+    result = search_rate(df, origin, destination)
+    if isinstance(result, pd.DataFrame):
+        st.write(result)
+    else:
+        st.write(result)
 
 # 그래프 섹션
-st.header("그래프")
+st.subheader("그래프")
 
 # 포트 비교 그래프
 st.subheader("포트 비교")
